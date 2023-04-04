@@ -1,0 +1,41 @@
+.ul{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+.li{
+    list-style-type: space-counter;
+    float: left;
+}
+body{
+    background-color: #110f0f;
+    color: rgb(192, 192, 192);
+}
+button{
+    background-color: #000000;
+    color: rgb(192, 192, 192);
+    padding: 4px 2px;
+    margin: 2px 0;
+    border-color: black;
+    border-radius: 4px;
+    transition: 100ms;
+}
+
+button:hover{
+    background-color: #333;
+    color: rgb(192, 192, 192);
+    padding: 4px 2px;
+    margin: 2px 0;
+    cursor: pointer;
+    border-color: black;
+    border-radius: 4px;
+}
+i{
+    color: rgb(166, 255, 0);
+}
+.hidden{
+    display: none;
+    animation: alternate 1s;
+}
