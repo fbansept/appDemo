@@ -30,7 +30,7 @@ public class UtilisateurController {
     JwtUtils jwtUtils;
 
 
-    @GetMapping("/admin/utilisateurs")
+    @GetMapping("/utilisateurs")
     @JsonView(VueUtilisateur.class)
     public List<Utilisateur> getUtilisateurs() {
         return utilisateurDao.findAll();
@@ -42,7 +42,7 @@ public class UtilisateurController {
         return utilisateurDao.findByPrenom(prenom);
     }
 
-    @GetMapping("/admin/utilisateur/{id}")
+    @GetMapping("/utilisateur/{id}")
     @JsonView(VueUtilisateur.class)
     public ResponseEntity<Utilisateur> getUtilisateurById(@PathVariable int id){
         Optional<Utilisateur> optional = utilisateurDao.findById(id);
@@ -51,15 +51,20 @@ public class UtilisateurController {
     }
 
     @Transactional
-    @PostMapping("/admin/utilisateur")
+    @PostMapping("/utilisateur")
     public ResponseEntity<Utilisateur> addUtilisateur(@RequestBody Utilisateur... utilisateurs){
+        //!!!Attention de bien envoyé un tableau d'objets!!!
         boolean update = true;
         try {
             for (Utilisateur utilisateur : utilisateurs) {
                 if (utilisateur.getId() != null) {
                     Optional<Utilisateur> optional = utilisateurDao.findById(utilisateur.getId());
                     if (optional.isPresent()) {
-                        utilisateurDao.save(utilisateur);
+                        Utilisateur utilisateurAModifier = optional.get();
+                        utilisateurAModifier.setPrenom(utilisateur.getPrenom());
+                        utilisateurAModifier.setNom(utilisateur.getNom());
+                        utilisateurAModifier.setEmail(utilisateur.getEmail());
+                        utilisateurDao.save(utilisateurAModifier);
                     } else {
                         //si tentative d'insertion d'utilisateur avec un id qui n'existe pas
                         throw new Exception("tentative d'insertion d'utilisateur avec un id qui n'existe pas");
@@ -76,12 +81,13 @@ public class UtilisateurController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/admin/utilisateur/{id}")
+    @DeleteMapping("/utilisateur/{id}")
+    @JsonView(VueUtilisateur.class)
     public ResponseEntity<Utilisateur> deleteUser(@PathVariable int id){
         Optional<Utilisateur> utilisateurAsupprimer = utilisateurDao.findById(id);
         if(utilisateurAsupprimer.isPresent()){
             utilisateurDao.deleteById(id);
-            return new ResponseEntity<>(utilisateurAsupprimer.get(), HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }

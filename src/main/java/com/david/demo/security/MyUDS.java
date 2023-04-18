@@ -24,6 +24,7 @@ public class MyUDS implements UserDetailsService {
             throw new UsernameNotFoundException("Utilisateur non trouvé");
         }
 
+
         return new MyUserDetails(utilisateur.get());
     }
 }
