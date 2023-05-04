@@ -1,20 +1,30 @@
 package com.david.demo.controller;
 
 import com.david.demo.dao.UtilisateurDao;
+import com.david.demo.model.Role;
 import com.david.demo.model.Utilisateur;
 import com.david.demo.security.JwtUtils;
+import com.david.demo.services.FichierService;
 import com.david.demo.view.VueUtilisateur;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.print.attribute.standard.Media;
 import javax.transaction.Transactional;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.*;
 
 @RestController
 @CrossOrigin
@@ -28,6 +38,12 @@ public class UtilisateurController {
 
     @Autowired
     JwtUtils jwtUtils;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    FichierService fichierService;
 
 
     @GetMapping("/utilisateurs")
@@ -50,13 +66,51 @@ public class UtilisateurController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+//    @Transactional
+//    @PostMapping("admin/utilisateur")
+//    public ResponseEntity<Utilisateur> addUtilisateur(@RequestBody Utilisateur... utilisateurs){
+//        //!!!Attention de bien envoyé un tableau d'objets!!!
+//        boolean update = true;
+//        try {
+//            for (Utilisateur utilisateur : utilisateurs) {
+//                if (utilisateur.getId() != null) {
+//                    Optional<Utilisateur> optional = utilisateurDao.findById(utilisateur.getId());
+//                    if (optional.isPresent()) {
+//                        Utilisateur utilisateurAModifier = optional.get();
+//                        utilisateurAModifier.setPrenom(utilisateur.getPrenom());
+//                        utilisateurAModifier.setNom(utilisateur.getNom());
+//                        utilisateurAModifier.setEmail(utilisateur.getEmail());
+//                        if (utilisateur.getPays().getId() != null)  utilisateurAModifier.setPays(utilisateur.getPays());
+//                        utilisateurDao.save(utilisateurAModifier);
+//                    } else {
+//                        //si tentative d'insertion d'utilisateur avec un id qui n'existe pas
+//                        throw new Exception("tentative d'insertion d'utilisateur avec un id qui n'existe pas");
+//                    }
+//                } else {
+//                    String hash = passwordEncoder.encode("1234");
+//                    utilisateur.setMotDePasse(hash);
+//                    Role role = new Role();
+//                    role.setId(2);
+//                    utilisateur.setRole(role);
+//                    utilisateurDao.save(utilisateur);
+//                    update = false;
+//                }
+//            }
+//        }catch (Exception e) {
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+//        if (update) return new ResponseEntity<>(HttpStatus.OK);
+//        return new ResponseEntity<>(HttpStatus.CREATED);
+//    }
+
     @Transactional
-    @PostMapping("/utilisateur")
-    public ResponseEntity<Utilisateur> addUtilisateur(@RequestBody Utilisateur... utilisateurs){
-        //!!!Attention de bien envoyé un tableau d'objets!!!
+    @PostMapping("admin/utilisateur")
+    public ResponseEntity<Utilisateur> addUtilisateur(
+            @RequestPart("utilisateur") Utilisateur utilisateur,
+            @Nullable @RequestParam("image") MultipartFile image
+            ){
         boolean update = true;
         try {
-            for (Utilisateur utilisateur : utilisateurs) {
                 if (utilisateur.getId() != null) {
                     Optional<Utilisateur> optional = utilisateurDao.findById(utilisateur.getId());
                     if (optional.isPresent()) {
@@ -64,16 +118,40 @@ public class UtilisateurController {
                         utilisateurAModifier.setPrenom(utilisateur.getPrenom());
                         utilisateurAModifier.setNom(utilisateur.getNom());
                         utilisateurAModifier.setEmail(utilisateur.getEmail());
+                        if (utilisateur.getPays().getId() != null)  utilisateurAModifier.setPays(utilisateur.getPays());
+                        if (image != null){
+                            try{
+                                String nomImage = UUID.randomUUID()+"_"+ image.getOriginalFilename();
+                                fichierService.transfertVersDossierUpload(image, nomImage);
+                                utilisateurAModifier.setNomImageprofil(nomImage);
+                            }catch (IOException e){
+                                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                            }
+                        }
                         utilisateurDao.save(utilisateurAModifier);
                     } else {
                         //si tentative d'insertion d'utilisateur avec un id qui n'existe pas
                         throw new Exception("tentative d'insertion d'utilisateur avec un id qui n'existe pas");
                     }
                 } else {
+                    String hash = passwordEncoder.encode("1234");
+                    utilisateur.setMotDePasse(hash);
+                    Role role = new Role();
+                    role.setId(2);
+                    utilisateur.setRole(role);
+                    if (image != null){
+                        try{
+                            String nomImage = UUID.randomUUID()+"_"+ image.getOriginalFilename();
+                            fichierService.transfertVersDossierUpload(image, utilisateur.getNom()+"."+utilisateur.getPrenom()+".jpg");
+                            utilisateur.setNomImageprofil(nomImage);
+                        }catch (IOException e){
+                            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                        }
+                    }
                     utilisateurDao.save(utilisateur);
                     update = false;
                 }
-            }
+
         }catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -81,7 +159,7 @@ public class UtilisateurController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/utilisateur/{id}")
+    @DeleteMapping("/admin/utilisateur/{id}")
     @JsonView(VueUtilisateur.class)
     public ResponseEntity<Utilisateur> deleteUser(@PathVariable int id){
         Optional<Utilisateur> utilisateurAsupprimer = utilisateurDao.findById(id);
@@ -111,4 +189,39 @@ public class UtilisateurController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @GetMapping("/image-profil/{id}")
+    public ResponseEntity<byte[]> getImageProfil(@PathVariable int id){
+        Optional<Utilisateur> utilisateur = utilisateurDao.findById(id);
+        if (utilisateur.isPresent()){
+            String nomImage = utilisateur.get().getNomImageprofil();
+            if (nomImage != null){
+                try{
+//                    byte[] image = fichierService.recupererFichier(nomImage);
+//                    HttpHeaders enTete = new HttpHeaders();
+//                    String mimeType = Files.probeContentType(new File(nomImage).toPath());
+//                    enTete.setContentType(MediaType.valueOf(mimeType));
+//                    return new ResponseEntity<>(image, enTete, HttpStatus.OK);
+
+                    //ou
+
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.valueOf( Files.probeContentType(new File(nomImage).toPath()) )) // définie le mime type
+                            .body(fichierService.recupererFichier(nomImage));
+                }catch (IOException e){
+                    return new ResponseEntity<>(HttpStatus.I_AM_A_TEAPOT);
+                }catch (Exception e){
+                    System.out.println("erreur mime type");
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/utilisateur-par-pays/{pays}")
+    @JsonView(VueUtilisateur.class)
+    public ResponseEntity<List<Utilisateur>> getUtilisateurAllemand(@PathVariable String pays){
+        return new ResponseEntity<>(utilisateurDao.trouverUtilisateurParPays(pays), HttpStatus.OK);
+    }
 }

@@ -12,6 +12,7 @@ import javax.persistence.*;
 @Setter
 public class Pays {
     @Id
+    @JsonView(VueUtilisateur.class)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 

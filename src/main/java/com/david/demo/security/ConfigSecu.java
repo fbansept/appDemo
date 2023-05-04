@@ -67,9 +67,10 @@ public class ConfigSecu extends WebSecurityConfigurerAdapter {
             })
                 .and().csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/inscription", "/connexion", "/utilisateurs","/utilisateur/**", "/utilisateur").permitAll()
+                .antMatchers("/inscription", "/connexion" , "/utilisateur-par-pays/**").permitAll()
                 .antMatchers("/admin/**").hasRole("ADMINISTRATEUR")
                 .antMatchers("/**").hasAnyRole("UTILISATEUR", "ADMINISTRATEUR")
+//                .antMatchers("/**").permitAll()
                 //
                 .anyRequest().authenticated()
                 .and().exceptionHandling()

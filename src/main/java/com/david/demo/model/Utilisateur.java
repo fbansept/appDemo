@@ -7,9 +7,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 
 import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -57,4 +63,17 @@ public class Utilisateur {
     @ManyToOne
     @JsonView(VueUtilisateur.class)
     private Entreprise entreprise;
+
+
+    @CreationTimestamp
+    @JsonView(VueUtilisateur.class)
+    private LocalDateTime createdAt;
+
+    @JsonView(VueUtilisateur.class)
+    private String nomImageprofil;
+
+    @UpdateTimestamp
+    @JsonView(VueUtilisateur.class)
+    private LocalDateTime updatedAt;
+
 }
