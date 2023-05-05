@@ -1,6 +1,5 @@
 package com.david.demo.dao;
 
-import com.david.demo.model.ImageDTO;
 import com.david.demo.model.Utilisateur;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +17,4 @@ public interface UtilisateurDao extends JpaRepository<Utilisateur, Integer> {
     @Query("FROM Utilisateur U JOIN U.pays P WHERE P.nom = ?1")
     List<Utilisateur> trouverUtilisateurParPays(String nomPays);
 
-    @Query("SELECT NEW ImageDTO(U.id, U.image) FROM Utilisateur U ")
-    List<ImageDTO> findAllImage();
 }
